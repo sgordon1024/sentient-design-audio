@@ -1,0 +1,80 @@
+[
+  {
+    "id": 1,
+    "title": "Intelligent Interfaces",
+    "src": "audio/Sentient-Design-Chapter-01-v4.mp3",
+    "duration": 196.206
+  },
+  {
+    "id": 2,
+    "title": "AI as Design Material",
+    "src": "audio/Sentient-Design-Chapter-02-v4.mp3",
+    "duration": 200.594
+  },
+  {
+    "id": 3,
+    "title": "The Sentient Triangle",
+    "src": "audio/Sentient-Design-Chapter-03-v4.mp3",
+    "duration": 192.209
+  },
+  {
+    "id": 4,
+    "title": "Transactional Tools",
+    "src": "audio/Sentient-Design-Chapter-04-v4.mp3",
+    "duration": 186.201
+  },
+  {
+    "id": 5,
+    "title": "Chat and the Conversational Interface",
+    "src": "audio/Sentient-Design-Chapter-05-v4.mp3",
+    "duration": 189.153
+  },
+  {
+    "id": 6,
+    "title": "Chat Is Not All Talk",
+    "src": "audio/Sentient-Design-Chapter-06-v4.mp3",
+    "duration": 197.329
+  },
+  {
+    "id": 7,
+    "title": "Agents and the Manager Experience",
+    "src": "audio/Sentient-Design-Chapter-07-v4.mp3",
+    "duration": 189.074
+  },
+  {
+    "id": 8,
+    "title": "Agents of Change",
+    "src": "audio/Sentient-Design-Chapter-08-v4.mp3",
+    "duration": 196.441
+  },
+  {
+    "id": 9,
+    "title": "Copilots and Uncharted Territory",
+    "src": "audio/Sentient-Design-Chapter-09-v4.mp3",
+    "duration": 189.466
+  },
+  {
+    "id": 10,
+    "title": "What Could Possibly Go Wrong?",
+    "src": "audio/Sentient-Design-Chapter-10-v4.mp3",
+    "duration": 195.082
+  },
+  {
+    "id": 11,
+    "title": "Defensive Design",
+    "src": "audio/Sentient-Design-Chapter-11-v4.mp3",
+    "duration": 198.531
+  },
+  {
+    "id": 12,
+    "title": "The Sentient Design Sprint",
+    "src": "audio/Sentient-Design-Chapter-12-v4.mp3",
+    "duration": 196.441
+  },
+  {
+    "id": 13,
+    "title": "Work the Problem",
+    "src": "audio/Sentient-Design-Chapter-13-v4.mp3",
+    "duration": 192.679
+  }
+]

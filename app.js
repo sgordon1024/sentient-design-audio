@@ -1,0 +1,36 @@
+'use strict';
+(async () => {
+ const $ = id => document.getElementById(id), audio = $('audio'), key = 'sentient-listening-v1';
+ let chapters, active=0, ready=false, generation=0, state={positions:{},completed:{},active:1,speed:1};
+ const time = s => `${Math.floor(Math.max(0,s)/60)}:${String(Math.floor(Math.max(0,s)%60)).padStart(2,'0')}`;
+ const say = text => {$('status').textContent=text;};
+ try { const saved=JSON.parse(localStorage.getItem(key)); if(saved && typeof saved==='object') state={...state,...saved,positions:saved.positions||{},completed:saved.completed||{}}; } catch {}
+ const save = () => { try {localStorage.setItem(key,JSON.stringify(state));} catch {say('Storage is unavailable. Your place will last only for this visit.');} };
+ try {const res=await fetch('chapters.json'); if(!res.ok) throw Error(); chapters=await res.json();} catch {say('The chapter list could not load. Please refresh to retry.'); return;}
+ const available = () => chapters.map((c,i)=>c.src?i:-1).filter(i=>i>=0);
+ const neighbor = direction => {const list=available();return list[list.indexOf(active)+direction];};
+ function remember(){if(ready){state.positions[chapters[active].id]=audio.currentTime;save();}}
+ function renderList(){
+  $('chapters').replaceChildren(...chapters.map((c,i)=>{const li=document.createElement('li'),b=document.createElement('button');b.className='chapter';b.disabled=!c.src;b.setAttribute('aria-current',String(i===active));b.setAttribute('aria-label',`Chapter ${c.id}: ${c.title}${c.src?'':', coming soon'}`);
+  const n=document.createElement('span');n.className='number';n.textContent=String(c.id).padStart(2,'0');const body=document.createElement('span'),title=document.createElement('strong'),detail=document.createElement('span');title.textContent=c.title;detail.className='detail';const p=Number(state.positions[c.id])||0;detail.textContent=!c.src?'Coming soon':state.completed[c.id]?'Finished · listen again':p>1?`Resume at ${time(p)}`:'Original audio summary';body.append(title,detail);const duration=document.createElement('span');duration.className='duration';duration.textContent=c.src?time(c.duration):'—';b.append(n,body,duration);b.onclick=()=>select(i,true);li.append(b);return li;}));
+  $('completed').textContent=`${chapters.filter(c=>state.completed[c.id]).length} of ${chapters.length} finished`;
+ }
+ function update(){const duration=Number.isFinite(audio.duration)?audio.duration:chapters[active].duration;const pos=ready?audio.currentTime:Math.min(Number(state.positions[chapters[active].id])||0,duration);$('progress').max=duration;$('progress').value=pos;$('progress').setAttribute('aria-valuetext',`${time(pos)} of ${time(duration)}`);$('elapsed').textContent=time(pos);$('remaining').textContent=`−${time(duration-pos)}`;if(ready&&'mediaSession' in navigator&&navigator.mediaSession.setPositionState){try{navigator.mediaSession.setPositionState({duration,position:Math.min(pos,duration),playbackRate:audio.playbackRate});}catch{}}}
+ async function play(){const token=generation;try{await audio.play();if(token===generation)say('Playing. Your place is saved as you listen.');}catch(e){if(token!==generation)return;say(e.name==='NotAllowedError'?'Ready for the next idea. Tap Play to continue.':'Playback could not start. Tap Play to retry.');}}
+ function select(index,autoplay=false,fresh=false){if(!chapters[index]?.src)return;remember();generation++;audio.pause();ready=false;active=index;const c=chapters[active];state.active=c.id;if(fresh)state.positions[c.id]=0;audio.src=c.src;audio.playbackRate=[.75,1,1.25,1.5,1.75,2].includes(Number(state.speed))?Number(state.speed):1;$('speed').value=String(audio.playbackRate);$('title').textContent=c.title;$('chapter-number').textContent=`CHAPTER ${String(c.id).padStart(2,'0')} / ${chapters.length}`;$('previous').disabled=neighbor(-1)===undefined;$('next').disabled=neighbor(1)===undefined;say('Your place is ready. Press Play when you are.');renderList();update();save();if('mediaSession' in navigator && 'MediaMetadata' in window)navigator.mediaSession.metadata=new MediaMetadata({title:c.title,artist:'Steve’s original summaries',album:'Sentient Design · Unofficial companion'});audio.load();if(autoplay)play();}
+ audio.addEventListener('loadedmetadata',()=>{const c=chapters[active];let pos=Number(state.positions[c.id])||0;if(state.completed[c.id]||pos>=audio.duration-.25)pos=0;audio.currentTime=Math.max(0,Math.min(pos,audio.duration));ready=true;update();});
+ audio.addEventListener('timeupdate',()=>{update();remember();});
+ audio.addEventListener('pause',()=>{remember();$('play').textContent='▶';$('play').setAttribute('aria-label','Play');if('mediaSession'in navigator)navigator.mediaSession.playbackState='paused';});
+ audio.addEventListener('play',()=>{$('play').textContent='Ⅱ';$('play').setAttribute('aria-label','Pause');if('mediaSession'in navigator)navigator.mediaSession.playbackState='playing';});
+ audio.addEventListener('ended',()=>{state.completed[chapters[active].id]=true;remember();const next=neighbor(1);if(next!==undefined)select(next,true,true);else{save();renderList();say('You’ve reached the end. Take an idea with you.');}});
+ audio.addEventListener('error',()=>say('This audio could not load. Check your connection and select the chapter to retry.'));
+ function seek(seconds){if(!ready)return;audio.currentTime=Math.min(audio.duration,Math.max(0,seconds));state.completed[chapters[active].id]=false;remember();update();}
+ function toggle(){if(audio.paused){if(audio.ended)seek(0);play();}else{audio.pause();say('Paused. Your place is saved.');}}
+ function move(direction){const i=neighbor(direction);if(i!==undefined)select(i,!audio.paused);}
+ $('play').onclick=toggle;$('previous').onclick=()=>move(-1);$('next').onclick=()=>move(1);$('back').onclick=()=>seek(audio.currentTime-15);$('forward').onclick=()=>seek(audio.currentTime+15);$('progress').oninput=e=>seek(Number(e.target.value));$('speed').onchange=e=>{state.speed=Number(e.target.value);audio.playbackRate=state.speed;save();update();};
+ $('reset').onclick=()=>{if(!confirm('Reset saved progress for all chapters on this browser?'))return;audio.pause();ready=false;state={positions:{},completed:{},active:chapters[0].id,speed:1};save();select(available()[0]);say('Progress reset. A fresh start.');};
+ document.addEventListener('keydown',e=>{if(e.ctrlKey||e.altKey||e.metaKey||e.target.closest('button,input,select,a,textarea,[contenteditable]'))return;if(e.code==='Space'){e.preventDefault();toggle();}if(e.code==='ArrowLeft'){e.preventDefault();seek(audio.currentTime-15);}if(e.code==='ArrowRight'){e.preventDefault();seek(audio.currentTime+15);}});
+ window.addEventListener('pagehide',remember);document.addEventListener('visibilitychange',()=>{if(document.hidden)remember();});
+ if('mediaSession'in navigator){const handlers={play, pause:()=>audio.pause(),previoustrack:()=>move(-1),nexttrack:()=>move(1),seekbackward:d=>seek(audio.currentTime-(d.seekOffset||15)),seekforward:d=>seek(audio.currentTime+(d.seekOffset||15)),seekto:d=>seek(d.seekTime)};for(const[action,handler]of Object.entries(handlers)){try{navigator.mediaSession.setActionHandler(action,handler);}catch{}}}
+ const restored=chapters.findIndex(c=>c.id===state.active&&c.src);select(restored>=0?restored:available()[0]);
+})();
